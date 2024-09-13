@@ -43,6 +43,74 @@ router.post("/clock-in", authMiddleware, async function (req, res) {
     res.status(500).send("Server error");
   }
 });
+router.post("/clock-in-with-selfie", authMiddleware, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { selfie } = req.body;
+
+    if (!selfie) {
+      return res.status(400).json({ msg: "Selfie is required" });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(400).send("User not available");
+    }
+
+    // Check if the user already has an active clock-in
+    const activeAttendance = await Attendance.findOne({
+      user: userId,
+      clockOut: null,
+    });
+
+    if (activeAttendance) {
+      return res.status(200).json({ msg: "Already clocked in" });
+    }
+
+    // Create new clock-in record with selfie
+    const attendance = new Attendance({
+      user: userId,
+      clockIn: new Date(),
+      selfie, // Store the Base64 image string
+    });
+
+    if (user) {
+      user.attendance = attendance._id;
+      await user.save();
+    }
+
+    await attendance.save();
+    res.json({ msg: "Clocked in with selfie successfully", attendance });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send("Server error");
+  }
+});
+router.get("/selfie/:attendanceId", authMiddleware, async (req, res) => {
+  try {
+    const { attendanceId } = req.params;
+
+    if (!attendanceId) {
+      return res.status(400).send("Attendance ID is required");
+    }
+
+    const attendance = await Attendance.findById(attendanceId);
+
+    if (!attendance) {
+      return res.status(404).json({ msg: "Attendance record not found" });
+    }
+
+    res.json({
+      userId: attendance.user,
+      clockIn: attendance.clockIn,
+      clockOut: attendance.clockOut,
+      selfie: attendance.selfie, // Return the selfie (Base64 image string)
+    });
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).send("Server error");
+  }
+});
 
 // Clock Out
 router.post("/clock-out", authMiddleware, async function (req, res) {

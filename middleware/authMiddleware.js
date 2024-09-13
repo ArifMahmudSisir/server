@@ -2,7 +2,7 @@ const jwt = require('jsonwebtoken');
 const payload = { user: { id: 'user_id_here' } };
 const secret = 'c73226600b55cc67c27d773f76b10240d8b3d8fc74c2363986f84f819b6d5aef4f5597b28b5b0aa5a24282c192c337ce6a78dd7cd4332018ee74339e327ef1b8';
 
-const token = jwt.sign(payload, secret, { expiresIn: '1h', algorithm: 'HS256' });
+const token = jwt.sign(payload, secret, { expiresIn: '2h', algorithm: 'HS256' });
 
 function authMiddleware(req, res, next) {
   const authHeader = req.header('Authorization');
